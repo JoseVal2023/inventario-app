@@ -1,9 +1,9 @@
 from fastapi import FastAPI, Depends
 from database import get_db
 from sqlalchemy.orm import Session
-from models import Producto
-from schemas import ProductoCreate
-from schemas import ProductoUpdate
+from models import Producto, Categoria, HistorialMovimiento
+from schemas import ProductoCreate, ProductoUpdate, CategoriaCreate, MovimientoCreate
+
 
 app = FastAPI()
 
@@ -60,3 +60,65 @@ def eliminar_producto(id: int, db: Session = Depends(get_db)):
     db.delete(producto_db)
     db.commit()
     return {"mensaje": "Producto eliminado correctamente"}
+
+
+@app.get("/categorias")
+def obtener_categorias(db: Session = Depends(get_db)):
+    categorias = db.query(Categoria).all()
+    return {"categorias": categorias}
+
+@app.post("/categorias")
+def crear_categoria(categoria: CategoriaCreate, db: Session = Depends(get_db)):
+    nueva_categoria = Categoria(nombre=categoria.nombre)
+    db.add(nueva_categoria)
+    db.commit()
+    db.refresh(nueva_categoria)
+    return nueva_categoria
+
+@app.delete("/categorias/{id}")
+def eliminar_categoria(id: int, db: Session = Depends(get_db)):
+    categoria_db = db.query(Categoria).filter(Categoria.id == id).first()
+    if not categoria_db:
+        return {"error": "Categoría no encontrada"}
+    db.delete(categoria_db)
+    db.commit()
+    return {"mensaje": "Categoría eliminada correctamente"}
+
+@app.post("/productos/{id}/agregar")
+def agregar_stock(id: int, movimiento: MovimientoCreate, db: Session = Depends(get_db)):
+    producto_db = db.query(Producto).filter(Producto.id == id).first()
+    if not producto_db:
+        return {"error": "Producto no encontrado"}
+    producto_db.cantidad += movimiento.cantidad
+    nuevo_movimiento = HistorialMovimiento(
+        producto_id=id,
+        accion="agregar",
+        cantidad=movimiento.cantidad,
+        origen=movimiento.origen
+    )
+    db.add(nuevo_movimiento)
+    db.commit()
+    db.refresh(producto_db)
+    return {"mensaje": "Stock actualizado", "cantidad_actual": producto_db.cantidad}
+
+@app.post("/productos/{id}/descontar")
+def descontar_stock(id: int, movimiento: MovimientoCreate, db: Session = Depends(get_db)):
+    producto_db = db.query(Producto).filter(Producto.id == id).first()
+    if not producto_db:
+        return {"error": "Producto no encontrado"}
+    producto_db.cantidad -= movimiento.cantidad
+    nuevo_movimiento = HistorialMovimiento(
+        producto_id=id,
+        accion="descontar",
+        cantidad=movimiento.cantidad,
+        origen=movimiento.origen
+    )
+    db.add(nuevo_movimiento)
+    db.commit()
+    db.refresh(producto_db)
+    return {"mensaje": "Stock actualizado", "cantidad_actual": producto_db.cantidad}
+
+@app.get("/historial")
+def obtener_historial(db: Session = Depends(get_db)):
+    historial = db.query(HistorialMovimiento).all()
+    return {"historial": historial}

@@ -16,3 +16,10 @@ class ProductoUpdate(BaseModel):
     stock_minimo : Optional[int] = None
     categoria_id : Optional[int] = None
     qr_code : Optional[str] = None
+    
+class CategoriaCreate(BaseModel):
+    nombre: str 
+    
+class MovimientoCreate(BaseModel):
+    cantidad: int
+    origen: str 
