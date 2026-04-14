@@ -2,6 +2,12 @@ from sqlalchemy import Column, Integer, String, Numeric, ForeignKey
 from sqlalchemy.orm import relationship
 from database import Base
 
+class Categoria(Base):
+    __tablename__ = "categorias"
+
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String, nullable=False)
+
 class Producto(Base):
     __tablename__ = "productos"
 
