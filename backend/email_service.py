@@ -26,5 +26,5 @@ def enviar_alerta_stock(nombre_producto, cantidad_actual, stock_minimo, email_de
     
     with smtplib.SMTP_SSL("smtp.gmail.com", 465) as servidor:
         servidor.login(EMAIL_SENDER, EMAIL_PASSWORD)
-        servidor.sendmail(EMAIL_SENDER, email_destino mensaje.as_string())
+        servidor.sendmail(EMAIL_SENDER, email_destino, mensaje.as_string())
     

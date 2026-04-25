@@ -3,7 +3,7 @@ from database import get_db
 from sqlalchemy.orm import Session
 from models import Producto, Categoria, HistorialMovimiento
 from schemas import ProductoCreate, ProductoUpdate, CategoriaCreate, MovimientoCreate
-
+from email_service import enviar_alerta_stock
 
 app = FastAPI()
 
@@ -116,6 +116,13 @@ def descontar_stock(id: int, movimiento: MovimientoCreate, db: Session = Depends
     db.add(nuevo_movimiento)
     db.commit()
     db.refresh(producto_db)
+    if producto_db.cantidad < producto_db.stock_minimo:
+        enviar_alerta_stock(
+        nombre_producto=producto_db.nombre,
+        cantidad_actual=producto_db.cantidad,
+        stock_minimo=producto_db.stock_minimo,
+        email_destino="tuemail@gmail.com"
+    )
     return {"mensaje": "Stock actualizado", "cantidad_actual": producto_db.cantidad}
 
 @app.get("/historial")
