@@ -9,6 +9,15 @@ class Categoria(Base):
     id = Column(Integer, primary_key=True)
     nombre = Column(String, nullable=False)
 
+class Usuario(Base):
+    __tablename__ = "usuarios"
+
+    id = Column(Integer, primary_key=True)
+    nombre = Column(String, nullable=False)
+    email = Column(String, nullable=False, unique=True)
+    contrasena = Column(String, nullable=False)
+    rol = Column(String, nullable=False, default="usuario")
+
 class Producto(Base):
     __tablename__ = "productos"
 
