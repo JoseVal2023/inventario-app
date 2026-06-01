@@ -1,5 +1,6 @@
 import { useState, useEffect } from 'react'
 import api from '../services/api'
+import { QRCodeSVG } from 'qrcode.react'
 
 function Productos() {
   const [productoEditando, setProductoEditando] = useState(null)
@@ -84,6 +85,7 @@ function Productos() {
             <th>Cantidad</th>
             <th>Stock Mínimo</th>
             <th>Acciones</th>
+            <th>QR</th>
           </tr>
         </thead>
         <tbody>
@@ -97,6 +99,10 @@ function Productos() {
                 <button onClick={() => setProductoEditando(producto)}>Editar</button>
                 <button onClick={() => eliminarProducto(producto.id)}>Eliminar</button>
               </td>
+              <td>{producto.qr_code && (
+                  <QRCodeSVG value={producto.qr_code} size={80} />
+                   )}
+            </td>
             </tr>
           ))}
         </tbody>
