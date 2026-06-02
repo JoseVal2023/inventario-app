@@ -1,19 +1,16 @@
-from passlib.context import CryptContext
 from jose import JWTError, jwt
 from datetime import datetime, timedelta
-import os
+import hashlib
 
 SECRET_KEY = "inventario_secret_key_2026"
 ALGORITHM = "HS256"
 ACCESS_TOKEN_EXPIRE_MINUTES = 480
 
-pwd_context = CryptContext(schemes=["bcrypt"], deprecated="auto")
-
 def encriptar_contrasena(contrasena: str):
-    return pwd_context.hash(contrasena)
+    return hashlib.sha256(contrasena.encode()).hexdigest()
 
 def verificar_contrasena(contrasena: str, hash: str):
-    return pwd_context.verify(contrasena, hash)
+    return hashlib.sha256(contrasena.encode()).hexdigest() == hash
 
 def crear_token(data: dict):
     datos = data.copy()
