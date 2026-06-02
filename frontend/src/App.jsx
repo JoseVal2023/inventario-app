@@ -5,6 +5,7 @@ import Categorias from './pages/Categorias'
 import Historial from './pages/Historial'
 import Alertas from './pages/Alertas'
 import Login from './pages/Login'
+import Dashboard from './pages/Dashboard'
 
 function Navbar({ usuario, onLogout }) {
   const location = useLocation()
@@ -80,7 +81,8 @@ function App() {
             <Route path="/categorias" element={<Categorias />} />
             <Route path="/historial" element={<Historial />} />
             <Route path="/alertas" element={<Alertas />} />
-            <Route path="*" element={<Navigate to="/productos" />} />
+            <Route path="*" element={<Navigate to="/dashboard" />} />
+            <Route path="/dashboard" element={<Dashboard />} />
           </Routes>
         </main>
       </div>
