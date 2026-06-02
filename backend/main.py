@@ -4,6 +4,9 @@ from sqlalchemy.orm import Session
 from models import Producto, Categoria, HistorialMovimiento
 from schemas import ProductoCreate, ProductoUpdate, CategoriaCreate, MovimientoCreate
 from email_service import enviar_alerta_stock
+from auth import encriptar_contrasena, verificar_contrasena, crear_token
+from models import Usuario
+from schemas import UsuarioCreate, LoginSchema
 
 app = FastAPI()
 
@@ -139,3 +142,34 @@ def descontar_stock(id: int, movimiento: MovimientoCreate, db: Session = Depends
 def obtener_historial(db: Session = Depends(get_db)):
     historial = db.query(HistorialMovimiento).all()
     return {"historial": historial}
+
+@app.post("/usuarios")
+def crear_usuario(usuario: UsuarioCreate, db: Session = Depends(get_db)):
+    usuario_existente = db.query(Usuario).filter(Usuario.email == usuario.email).first()
+    if usuario_existente:
+        return {"error": "El email ya está registrado"}
+    nuevo_usuario = Usuario(
+        nombre=usuario.nombre,
+        email=usuario.email,
+        contrasena=encriptar_contrasena(usuario.contrasena),
+        rol=usuario.rol
+    )
+    db.add(nuevo_usuario)
+    db.commit()
+    db.refresh(nuevo_usuario)
+    return {"mensaje": "Usuario creado correctamente", "id": nuevo_usuario.id}
+
+@app.get("/usuarios")
+def obtener_usuarios(db: Session = Depends(get_db)):
+    usuarios = db.query(Usuario).all()
+    return {"usuarios": [{"id": u.id, "nombre": u.nombre, "email": u.email, "rol": u.rol} for u in usuarios]}
+
+@app.post("/login")
+def login(datos: LoginSchema, db: Session = Depends(get_db)):
+    usuario = db.query(Usuario).filter(Usuario.email == datos.email).first()
+    if not usuario:
+        return {"error": "Email o contraseña incorrectos"}
+    if not verificar_contrasena(datos.contrasena, usuario.contrasena):
+        return {"error": "Email o contraseña incorrectos"}
+    token = crear_token({"id": usuario.id, "email": usuario.email, "rol": usuario.rol})
+    return {"token": token, "rol": usuario.rol, "nombre": usuario.nombre}

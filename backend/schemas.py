@@ -23,3 +23,13 @@ class CategoriaCreate(BaseModel):
 class MovimientoCreate(BaseModel):
     cantidad: int
     origen: str 
+
+class UsuarioCreate(BaseModel):
+    nombre: str
+    email: str
+    contrasena: str
+    rol: str = "usuario"
+
+class LoginSchema(BaseModel):
+    email: str
+    contrasena: str
