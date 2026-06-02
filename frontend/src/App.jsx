@@ -1,12 +1,15 @@
-import { BrowserRouter, Routes, Route, Link, useLocation } from 'react-router-dom'
+import { useState } from 'react'
+import { BrowserRouter, Routes, Route, Link, useLocation, Navigate } from 'react-router-dom'
 import Productos from './pages/Productos'
 import Categorias from './pages/Categorias'
 import Historial from './pages/Historial'
 import Alertas from './pages/Alertas'
+import Login from './pages/Login'
 
-function Navbar() {
+function Navbar({ usuario, onLogout }) {
   const location = useLocation()
   const links = [
+    { to: '/dashboard', label: '📊 Dashboard' },
     { to: '/productos', label: 'Productos' },
     { to: '/categorias', label: 'Categorías' },
     { to: '/historial', label: 'Historial' },
@@ -17,7 +20,7 @@ function Navbar() {
     <nav className="bg-blue-600 shadow-lg">
       <div className="max-w-7xl mx-auto px-4 py-3 flex items-center justify-between">
         <h1 className="text-white text-xl font-bold">📦 Sistema de Inventario</h1>
-        <div className="flex gap-4">
+        <div className="flex gap-4 items-center">
           {links.map(link => (
             <Link
               key={link.to}
@@ -31,6 +34,13 @@ function Navbar() {
               {link.label}
             </Link>
           ))}
+          <span className="text-white text-sm">👤 {usuario.nombre}</span>
+          <button
+            onClick={onLogout}
+            className="bg-white text-blue-600 px-4 py-2 rounded-lg text-sm font-medium hover:bg-gray-100"
+          >
+            Cerrar sesión
+          </button>
         </div>
       </div>
     </nav>
@@ -38,16 +48,39 @@ function Navbar() {
 }
 
 function App() {
+  const [usuario, setUsuario] = useState(() => {
+    const token = localStorage.getItem('token')
+    const rol = localStorage.getItem('rol')
+    const nombre = localStorage.getItem('nombre')
+    return token ? { token, rol, nombre } : null
+  })
+
+  function handleLogin(datos) {
+    setUsuario(datos)
+  }
+
+  function handleLogout() {
+    localStorage.removeItem('token')
+    localStorage.removeItem('rol')
+    localStorage.removeItem('nombre')
+    setUsuario(null)
+  }
+
+  if (!usuario) {
+    return <Login onLogin={handleLogin} />
+  }
+
   return (
     <BrowserRouter>
       <div className="min-h-screen bg-gray-50">
-        <Navbar />
+        <Navbar usuario={usuario} onLogout={handleLogout} />
         <main className="max-w-7xl mx-auto px-4 py-8">
           <Routes>
             <Route path="/productos" element={<Productos />} />
             <Route path="/categorias" element={<Categorias />} />
             <Route path="/historial" element={<Historial />} />
             <Route path="/alertas" element={<Alertas />} />
+            <Route path="*" element={<Navigate to="/productos" />} />
           </Routes>
         </main>
       </div>
