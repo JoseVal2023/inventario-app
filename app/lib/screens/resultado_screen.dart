@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 
 class ResultadoScreen extends StatefulWidget {
   final String qrCode;
@@ -19,9 +17,15 @@ class ResultadoScreen extends StatefulWidget {
 }
 
 class _ResultadoScreenState extends State<ResultadoScreen> {
+  final Map<String, dynamic> productosDemo = {
+    'PROD001': {'nombre': 'Silla de Oficina', 'precio': 59.99, 'cantidad': 10, 'stock_minimo': 3},
+    'PROD002': {'nombre': 'Mesa de Trabajo', 'precio': 99.99, 'cantidad': 5, 'stock_minimo': 2},
+    'PROD003': {'nombre': 'Teclado Mecánico', 'precio': 79.99, 'cantidad': 15, 'stock_minimo': 5},
+  };
+
   Map<String, dynamic>? producto;
   String mensaje = '';
-  bool cargando = true;
+  Color mensajeColor = Colors.green;
 
   @override
   void initState() {
@@ -29,49 +33,42 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
     procesarQR();
   }
 
-  Future<void> procesarQR() async {
-    try {
-      final response = await http.get(
-        Uri.parse('http://10.0.2.2:8000/productos'),
-      );
-      final data = jsonDecode(response.body);
-      final productos = data['productos'] as List;
-      final encontrado = productos.firstWhere(
-        (p) => p['qr_code'] == widget.qrCode,
-        orElse: () => null,
-      );
+  void procesarQR() {
+    final encontrado = productosDemo[widget.qrCode];
 
-      if (encontrado == null) {
-        setState(() {
-          mensaje = 'Producto no encontrado';
-          cargando = false;
-        });
-        return;
-      }
-
-      setState(() => producto = encontrado);
-
-      if (widget.accion == 'agregar') {
-        await http.post(
-          Uri.parse('http://10.0.2.2:8000/productos/${encontrado['id']}/agregar'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'cantidad': widget.cantidad, 'origen': 'app'}),
-        );
-        setState(() => mensaje = 'Stock agregado correctamente');
-      } else if (widget.accion == 'descontar') {
-        await http.post(
-          Uri.parse('http://10.0.2.2:8000/productos/${encontrado['id']}/descontar'),
-          headers: {'Content-Type': 'application/json'},
-          body: jsonEncode({'cantidad': widget.cantidad, 'origen': 'app'}),
-        );
-        setState(() => mensaje = 'Stock descontado correctamente');
-      }
-
-      setState(() => cargando = false);
-    } catch (e) {
+    if (encontrado == null) {
       setState(() {
-        mensaje = 'Error al conectar con el servidor';
-        cargando = false;
+        mensaje = 'Producto no encontrado';
+        mensajeColor = Colors.red;
+      });
+      return;
+    }
+
+    setState(() => producto = Map.from(encontrado));
+
+    if (widget.accion == 'agregar') {
+      setState(() {
+        producto!['cantidad'] = producto!['cantidad'] + widget.cantidad;
+        mensaje = '✅ Se agregaron ${widget.cantidad} unidades correctamente';
+        mensajeColor = Colors.green;
+      });
+    } else if (widget.accion == 'descontar') {
+      if (producto!['cantidad'] < widget.cantidad) {
+        setState(() {
+          mensaje = '❌ Stock insuficiente';
+          mensajeColor = Colors.red;
+        });
+      } else {
+        setState(() {
+          producto!['cantidad'] = producto!['cantidad'] - widget.cantidad;
+          mensaje = '✅ Se descontaron ${widget.cantidad} unidades correctamente';
+          mensajeColor = Colors.green;
+        });
+      }
+    } else {
+      setState(() {
+        mensaje = 'ℹ️ Información del producto';
+        mensajeColor = Colors.blue;
       });
     }
   }
@@ -84,41 +81,87 @@ class _ResultadoScreenState extends State<ResultadoScreen> {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
-      body: cargando
-          ? const Center(child: CircularProgressIndicator())
-          : Center(
-              child: Padding(
-                padding: const EdgeInsets.all(24),
-                child: Column(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: [
-                    if (producto != null) ...[
-                      Text(producto!['nombre'],
-                          style: const TextStyle(fontSize: 28, fontWeight: FontWeight.bold)),
+      body: Center(
+        child: Padding(
+          padding: const EdgeInsets.all(24),
+          child: Column(
+            mainAxisAlignment: MainAxisAlignment.center,
+            children: [
+              if (producto != null) ...[
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(24),
+                  decoration: BoxDecoration(
+                    color: Colors.white,
+                    borderRadius: BorderRadius.circular(16),
+                    boxShadow: [BoxShadow(color: Colors.grey.shade200, blurRadius: 10)],
+                  ),
+                  child: Column(
+                    children: [
+                      const Icon(Icons.inventory_2, size: 60, color: Colors.blue),
                       const SizedBox(height: 16),
-                      Text('Precio: \$${producto!['precio']}',
-                          style: const TextStyle(fontSize: 20)),
-                      const SizedBox(height: 8),
-                      Text('Stock actual: ${producto!['cantidad']}',
-                          style: const TextStyle(fontSize: 20)),
-                      const SizedBox(height: 8),
-                      Text('Stock mínimo: ${producto!['stock_minimo']}',
-                          style: const TextStyle(fontSize: 20)),
+                      Text(producto!['nombre'],
+                          style: const TextStyle(fontSize: 24, fontWeight: FontWeight.bold)),
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceAround,
+                        children: [
+                          Column(children: [
+                            const Text('Precio', style: TextStyle(color: Colors.grey)),
+                            Text('\$${producto!['precio']}',
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold, color: Colors.blue)),
+                          ]),
+                          Column(children: [
+                            const Text('Stock', style: TextStyle(color: Colors.grey)),
+                            Text('${producto!['cantidad']}',
+                                style: TextStyle(
+                                  fontSize: 20,
+                                  fontWeight: FontWeight.bold,
+                                  color: producto!['cantidad'] < producto!['stock_minimo']
+                                      ? Colors.red
+                                      : Colors.green,
+                                )),
+                          ]),
+                          Column(children: [
+                            const Text('Mínimo', style: TextStyle(color: Colors.grey)),
+                            Text('${producto!['stock_minimo']}',
+                                style: const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
+                          ]),
+                        ],
+                      ),
                     ],
-                    if (mensaje.isNotEmpty) ...[
-                      const SizedBox(height: 24),
-                      Text(mensaje,
-                          style: const TextStyle(fontSize: 18, color: Colors.green)),
-                    ],
-                    const SizedBox(height: 40),
-                    ElevatedButton(
-                      onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
-                      child: const Text('Volver al inicio'),
-                    ),
-                  ],
+                  ),
+                ),
+                const SizedBox(height: 24),
+              ],
+              if (mensaje.isNotEmpty)
+                Container(
+                  width: double.infinity,
+                  padding: const EdgeInsets.all(16),
+                  decoration: BoxDecoration(
+                    color: mensajeColor.withOpacity(0.1),
+                    borderRadius: BorderRadius.circular(12),
+                    border: Border.all(color: mensajeColor),
+                  ),
+                  child: Text(mensaje,
+                      textAlign: TextAlign.center,
+                      style: TextStyle(fontSize: 16, color: mensajeColor, fontWeight: FontWeight.bold)),
+                ),
+              const SizedBox(height: 40),
+              ElevatedButton.icon(
+                onPressed: () => Navigator.popUntil(context, (route) => route.isFirst),
+                icon: const Icon(Icons.home),
+                label: const Text('Volver al inicio'),
+                style: ElevatedButton.styleFrom(
+                  backgroundColor: Colors.blue,
+                  foregroundColor: Colors.white,
+                  minimumSize: const Size(200, 50),
                 ),
               ),
-            ),
+            ],
+          ),
+        ),
+      ),
     );
   }
 }

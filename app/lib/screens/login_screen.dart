@@ -1,6 +1,4 @@
 import 'package:flutter/material.dart';
-import 'dart:convert';
-import 'package:http/http.dart' as http;
 import 'home_screen.dart';
 
 class LoginScreen extends StatefulWidget {
@@ -18,30 +16,22 @@ class _LoginScreenState extends State<LoginScreen> {
 
   Future<void> handleLogin() async {
     setState(() { cargando = true; error = ''; });
-    try {
-      final response = await http.post(
-        Uri.parse('http://10.0.2.2:8000/login'),
-        headers: {'Content-Type': 'application/json'},
-        body: jsonEncode({
-          'email': emailController.text,
-          'contrasena': contrasenaController.text,
-        }),
-      );
-      final data = jsonDecode(response.body);
-      if (data['error'] != null) {
-        setState(() { error = data['error']; cargando = false; });
-        return;
-      }
-      if (data['rol'] == 'admin') {
-        setState(() { error = 'Los administradores deben usar la web.'; cargando = false; });
-        return;
-      }
+
+    await Future.delayed(const Duration(seconds: 1));
+
+    if (emailController.text == 'operador@inventario.com' &&
+        contrasenaController.text == '1234') {
       Navigator.pushReplacement(
         context,
-        MaterialPageRoute(builder: (context) => const HomeScreen()),
+        MaterialPageRoute(
+          builder: (context) => HomeScreen(nombreUsuario: 'Operador Demo'),
+        ),
       );
-    } catch (e) {
-      setState(() { error = 'Error al conectar con el servidor'; cargando = false; });
+    } else {
+      setState(() {
+        error = 'Email o contraseña incorrectos';
+        cargando = false;
+      });
     }
   }
 

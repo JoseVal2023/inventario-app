@@ -1,8 +1,10 @@
 import 'package:flutter/material.dart';
 import 'scanner_screen.dart';
+import 'login_screen.dart';
 
 class HomeScreen extends StatelessWidget {
-  const HomeScreen({super.key});
+  final String nombreUsuario;
+  const HomeScreen({super.key, required this.nombreUsuario});
 
   @override
   Widget build(BuildContext context) {
@@ -12,10 +14,49 @@ class HomeScreen extends StatelessWidget {
         backgroundColor: Colors.blue,
         foregroundColor: Colors.white,
       ),
+      drawer: Drawer(
+        child: Column(
+          children: [
+            UserAccountsDrawerHeader(
+              decoration: const BoxDecoration(color: Colors.blue),
+              accountName: Text(nombreUsuario, style: const TextStyle(fontSize: 18, fontWeight: FontWeight.bold)),
+              accountEmail: const Text('Operador de inventario'),
+              currentAccountPicture: CircleAvatar(
+                backgroundColor: Colors.white,
+                child: Text(
+                  nombreUsuario.isNotEmpty ? nombreUsuario[0].toUpperCase() : 'U',
+                  style: const TextStyle(fontSize: 28, color: Colors.blue, fontWeight: FontWeight.bold),
+                ),
+              ),
+            ),
+            ListTile(
+              leading: const Icon(Icons.qr_code_scanner, color: Colors.blue),
+              title: const Text('Escanear QR'),
+              onTap: () => Navigator.pop(context),
+            ),
+            const Divider(),
+            ListTile(
+              leading: const Icon(Icons.logout, color: Colors.red),
+              title: const Text('Cerrar sesión', style: TextStyle(color: Colors.red)),
+              onTap: () {
+                Navigator.pushReplacement(
+                  context,
+                  MaterialPageRoute(builder: (context) => const LoginScreen()),
+                );
+              },
+            ),
+          ],
+        ),
+      ),
       body: Center(
         child: Column(
           mainAxisAlignment: MainAxisAlignment.center,
           children: [
+            Text(
+              '¡Hola, $nombreUsuario!',
+              style: const TextStyle(fontSize: 20, color: Colors.grey),
+            ),
+            const SizedBox(height: 8),
             const Text(
               '¿Qué deseas hacer?',
               style: TextStyle(fontSize: 24, fontWeight: FontWeight.bold),
