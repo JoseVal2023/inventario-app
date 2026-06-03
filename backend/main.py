@@ -173,3 +173,12 @@ def login(datos: LoginSchema, db: Session = Depends(get_db)):
         return {"error": "Email o contraseña incorrectos"}
     token = crear_token({"id": usuario.id, "email": usuario.email, "rol": usuario.rol})
     return {"token": token, "rol": usuario.rol, "nombre": usuario.nombre}
+
+@app.delete("/usuarios/{id}")
+def eliminar_usuario(id: int, db: Session = Depends(get_db)):
+    usuario_db = db.query(Usuario).filter(Usuario.id == id).first()
+    if not usuario_db:
+        return {"error": "Usuario no encontrado"}
+    db.delete(usuario_db)
+    db.commit()
+    return {"mensaje": "Usuario eliminado correctamente"}

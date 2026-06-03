@@ -6,6 +6,7 @@ import Historial from './pages/Historial'
 import Alertas from './pages/Alertas'
 import Login from './pages/Login'
 import Dashboard from './pages/Dashboard'
+import Usuarios from './pages/Usuarios'
 
 function Navbar({ usuario, onLogout }) {
   const location = useLocation()
@@ -15,6 +16,7 @@ function Navbar({ usuario, onLogout }) {
     { to: '/categorias', label: 'Categorías' },
     { to: '/historial', label: 'Historial' },
     { to: '/alertas', label: '⚠️ Alertas' },
+    { to: '/usuarios', label: '👥 Usuarios' },
   ]
 
   return (
@@ -49,16 +51,23 @@ function Navbar({ usuario, onLogout }) {
 }
 
 function App() {
-  const [usuario, setUsuario] = useState(() => {
+const [usuario, setUsuario] = useState(() => {
     const token = localStorage.getItem('token')
     const rol = localStorage.getItem('rol')
     const nombre = localStorage.getItem('nombre')
-    return token ? { token, rol, nombre } : null
+    return token && rol === 'admin' ? { token, rol, nombre } : null
   })
 
-  function handleLogin(datos) {
-    setUsuario(datos)
+function handleLogin(datos) {
+  if (datos.rol !== 'admin') {
+    alert('Acceso denegado. Solo los administradores pueden acceder a esta plataforma.')
+    localStorage.removeItem('token')
+    localStorage.removeItem('rol')
+    localStorage.removeItem('nombre')
+    return
   }
+  setUsuario(datos)
+}
 
   function handleLogout() {
     localStorage.removeItem('token')
@@ -83,6 +92,7 @@ function App() {
             <Route path="/alertas" element={<Alertas />} />
             <Route path="*" element={<Navigate to="/dashboard" />} />
             <Route path="/dashboard" element={<Dashboard />} />
+            <Route path="/usuarios" element={<Usuarios />} />
           </Routes>
         </main>
       </div>
